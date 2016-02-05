@@ -1,10 +1,13 @@
 package com.film.movie.moviepopulareapp;
 
 import android.app.Fragment;
+import android.app.FragmentManager;
 import android.app.FragmentTransaction;
 import android.app.ProgressDialog;
 import android.content.Context;
+import android.content.Intent;
 import android.content.SharedPreferences;
+import android.net.ParseException;
 import android.os.AsyncTask;
 import android.os.Bundle;
 import android.view.LayoutInflater;
@@ -12,13 +15,10 @@ import android.view.View;
 import android.view.ViewGroup;
 import android.widget.AdapterView;
 import android.widget.ArrayAdapter;
+import android.widget.Button;
 import android.widget.GridView;
 import android.widget.Spinner;
 import android.widget.Toast;
-
-import org.json.JSONArray;
-import org.json.JSONException;
-import org.json.JSONObject;
 
 import java.io.BufferedReader;
 import java.io.IOException;
@@ -27,15 +27,35 @@ import java.io.InputStreamReader;
 import java.net.HttpURLConnection;
 import java.net.MalformedURLException;
 import java.net.URL;
+
+import org.apache.http.protocol.HTTP;
+import org.json.JSONArray;
+import org.json.JSONException;
+import org.json.JSONObject;
+
+import java.io.IOException;
+import java.net.HttpURLConnection;
+import java.net.MalformedURLException;
+import java.net.URL;
+import java.nio.channels.Channels;
+import java.sql.Connection;
 import java.util.ArrayList;
 import java.util.Collections;
 import java.util.Comparator;
 import java.util.HashSet;
 import java.util.Iterator;
 import java.util.Set;
+import org.apache.http.HttpEntity;
+import org.apache.http.HttpResponse;
+import org.apache.http.client.HttpClient;
+import org.apache.http.client.methods.HttpGet;
+import org.apache.http.impl.client.DefaultHttpClient;
+import org.apache.http.util.EntityUtils;
+import java.io.IOException;
 
 
-public class Fragment_main extends Fragment {
+
+public class Fragment_main extends Fragment  {
 
 
     ArrayList<Movie> MovieList;
@@ -46,26 +66,26 @@ public class Fragment_main extends Fragment {
     @Override
     public View onCreateView(LayoutInflater inflater, ViewGroup container, Bundle savedInstanceState) {
         View view=inflater.inflate(R.layout.fragment_main,container,false);
-        //////
+        ///////////////////////////////////////////////////////////////////////////////////////////////////////////////////////
 
 
 
         ///for spinner
         spinner=(Spinner)view.findViewById(R.id.spinner);
         //ArrayAdapter
-        adapterSpinner= ArrayAdapter.createFromResource(this.getActivity(), R.array.Preference, android.R.layout.simple_spinner_item);
+        adapterSpinner=ArrayAdapter.createFromResource(this.getActivity(),R.array.Preference,android.R.layout.simple_spinner_item);
         adapterSpinner.setDropDownViewResource(android.R.layout.simple_spinner_dropdown_item);
 
-       SharedPreferences sharedPreferences=this.getActivity().getSharedPreferences("SortByRate", Context.MODE_PRIVATE);
+        SharedPreferences sharedPreferences=this.getActivity().getSharedPreferences("SortByRate", Context.MODE_PRIVATE);
 
         spinner.setAdapter(adapterSpinner);
         spinner.setSelection(sharedPreferences.getInt("PREF_SPINNER", 0));
         spinner.setOnItemSelectedListener(new AdapterView.OnItemSelectedListener() {
             @Override
             public void onItemSelected(AdapterView<?> parentView, View selectedItemView, int position, long id) {
-                new JSONAsyncTask().execute("key");
-                 SharedPreferences preferences =getActivity().getSharedPreferences("SortByRate", Context.MODE_PRIVATE);
-                 preferences.edit().putInt("PREF_SPINNER", position).commit();
+                new JSONAsyncTask().execute("http://api.themoviedb.org/3/discover/movie?sort_by=popularity.desc&api_key=610d2a960011e9203aaf2547007cd5f9");
+                SharedPreferences preferences =getActivity().getSharedPreferences("SortByRate", Context.MODE_PRIVATE);
+                preferences.edit().putInt("PREF_SPINNER", position).commit();
 
             }
 
@@ -77,41 +97,42 @@ public class Fragment_main extends Fragment {
 
 
         MovieList = new ArrayList<Movie>();
-       new JSONAsyncTask().execute("Key");
+        new JSONAsyncTask().execute("http://api.themoviedb.org/3/discover/movie?sort_by=popularity.desc&api_key=610d2a960011e9203aaf2547007cd5f9");
         final GridView gridView=(GridView)view.findViewById(R.id.gridView);
         adapter = new MovieAdapter(getActivity(), R.layout.fragment_main_list_item_display, MovieList);
         gridView.setAdapter(adapter);
-         gridView.setOnItemClickListener(new AdapterView.OnItemClickListener() {
-             @Override
-             public void onItemClick(AdapterView<?> parent, View view, int position, long id) {
+        gridView.setOnItemClickListener(new AdapterView.OnItemClickListener() {
+            @Override
+            public void onItemClick(AdapterView<?> parent, View view, int position, long id) {
 
-              Fragment_details descriptionFragment = (Fragment_details) getFragmentManager()
-                         .findFragmentById(R.id.fragment_details);
+                Fragment_details descriptionFragment = (Fragment_details) getFragmentManager()
+                        .findFragmentById(R.id.fragment_details);
 
-                 Fragment_details newFragment = new Fragment_details();
-                 Bundle args = new Bundle();
-                 MovieAdapter.ViewHolder holder = (MovieAdapter.ViewHolder) view.getTag();
-                 args.putInt("MovieID", MovieList.get(position).getId());
-                 args.putString("original_title", MovieList.get(position).getOriginal_title());
-                 args.putString("poster_path", MovieList.get(position).getImage());
-                 args.putString("overview", MovieList.get(position).getOverview());
-                 args.putInt("vote_average", MovieList.get(position).getVote_average());
-                 args.putString("release_date", MovieList.get(position).getRelease_date());
-                 args.putInt("popularity", MovieList.get(position).getPopularity());
+                Fragment_details newFragment = new Fragment_details();
+                Bundle args = new Bundle();
+                MovieAdapter.ViewHolder holder = (MovieAdapter.ViewHolder) view.getTag();
+                args.putInt("MovieID", MovieList.get(position).getId());
+                args.putString("original_title", MovieList.get(position).getOriginal_title());
+                args.putString("poster_path", MovieList.get(position).getImage());
+                args.putString("overview", MovieList.get(position).getOverview());
+                args.putInt("vote_average", MovieList.get(position).getVote_average());
+                args.putString("release_date", MovieList.get(position).getRelease_date());
+                args.putInt("popularity", MovieList.get(position).getPopularity());
 
-                 newFragment.setArguments(args);
-                 FragmentTransaction transaction = getFragmentManager().beginTransaction();
+                newFragment.setArguments(args);
+                FragmentTransaction transaction = getFragmentManager().beginTransaction();
 
-               if(descriptionFragment ==null) {
-                   transaction.add(R.id.bb, newFragment).addToBackStack(null).commit();
+                if(descriptionFragment ==null) {
+                    transaction.replace(R.id.bb, newFragment).commit();
 
                 }
                 else
-                     transaction.replace(R.id.fragment_details, newFragment).addToBackStack(null).commit();
+                    transaction.replace(R.id.fragment_details, newFragment).commit();
 
 
-        }
-         });
+
+            }
+        });
 
         return view;
     }
@@ -131,8 +152,8 @@ public class Fragment_main extends Fragment {
 
         @Override
         protected String doInBackground(String... params) {
-         HttpURLConnection Connection = null;
-           BufferedReader reader = null;
+            HttpURLConnection Connection = null;
+            BufferedReader reader = null;
             try {
                 URL url=new URL(params[0]);
                 Connection=(HttpURLConnection)url.openConnection();
@@ -146,7 +167,8 @@ public class Fragment_main extends Fragment {
                     buffer.append(line);
                 }
 
-             String finalJson= buffer.toString();
+                String finalJson= buffer.toString();
+
                 SharedPreferences sharedPreferences = getActivity().getSharedPreferences("SortByRate", Context.MODE_PRIVATE);
                 int sortPreference = sharedPreferences.getInt("PREF_SPINNER", 0);
 
@@ -168,7 +190,7 @@ public class Fragment_main extends Fragment {
                     MovieList.add(movie);
                 }
 
-                if (sortPreference == 0) { ////for sort bypopularity
+                if (sortPreference == 0) {
                     MovieList.clear();
 
                     for (int i = 0; i < jarray.length(); i++) {
@@ -196,7 +218,7 @@ public class Fragment_main extends Fragment {
 
                 }
 
-                else if (sortPreference == 1) {  /////for sort by rated
+                else if (sortPreference == 1) {
                     MovieList.clear();
                     for (int i = 0; i < jarray.length(); i++) {
                         JSONObject object = jarray.getJSONObject(i);
@@ -227,7 +249,7 @@ public class Fragment_main extends Fragment {
                     Iterator<String> it = xx.iterator();
                     while (it.hasNext()) {
 
-                        String Movie_id = it.next();
+                        String Movie_id = (String) it.next();
                         int MovieId = Integer.parseInt(Movie_id);
 
                         for (int i = 0; i < jarray.length(); i++) {
@@ -255,7 +277,7 @@ public class Fragment_main extends Fragment {
 
 
 
-          return buffer.toString();
+                return buffer.toString();
             } catch (MalformedURLException e) {
                 e.printStackTrace();
             } catch (IOException e)

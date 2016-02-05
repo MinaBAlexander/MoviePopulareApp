@@ -3,7 +3,7 @@
     android:orientation="vertical" android:layout_width="match_parent"
     android:layout_height="match_parent"
     android:id="@+id/bb">
-    <fragment class="com.film.movie.moviespopulerapp.Fragment_main"
+    <fragment class="com.film.movie.moviepopulareapp.Fragment_main"
         android:id="@+id/fragment_main"
         android:layout_weight="1"
         android:layout_width="match_parent"
